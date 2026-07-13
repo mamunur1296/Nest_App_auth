@@ -17,9 +17,7 @@ import { JwtAuthGuard } from '../../auth/presentation/guards/jwt-auth.guard';
 import { RolesGuard } from '../../auth/presentation/guards/roles.guard';
 import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 
-/**
- * Controller exposing CRUD REST endpoints for dynamic Roles.
- */
+//Controller exposing CRUD REST endpoints for dynamic Roles.
 @ApiTags('roles')
 @ApiBearerAuth()
 @Controller('roles')
@@ -31,69 +29,34 @@ export class RoleController {
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.CREATED)
   public async create(@Body() dto: CreateRoleDto) {
-    const role = await this.roleService.create(dto);
-    return {
-      message: 'Role created successfully',
-      role: {
-        id: role.getId(),
-        name: role.getName(),
-        createdAt: role.getCreatedAt(),
-      },
-    };
+    return await this.roleService.create(dto);
   }
 
   @Get()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
   public async findAll() {
-    const roles = await this.roleService.findAll();
-    return {
-      message: 'Roles retrieved successfully',
-      roles: roles.map((role) => ({
-        id: role.getId(),
-        name: role.getName(),
-        createdAt: role.getCreatedAt(),
-      })),
-    };
+    return await this.roleService.findAll();
   }
 
   @Get(':id')
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
   public async findOne(@Param('id') id: string) {
-    const role = await this.roleService.findOne(id);
-    return {
-      message: 'Role retrieved successfully',
-      role: {
-        id: role.getId(),
-        name: role.getName(),
-        createdAt: role.getCreatedAt(),
-      },
-    };
+    return await this.roleService.findOne(id);
   }
 
   @Put(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    const role = await this.roleService.update(id, dto);
-    return {
-      message: 'Role updated successfully',
-      role: {
-        id: role.getId(),
-        name: role.getName(),
-        createdAt: role.getCreatedAt(),
-      },
-    };
+    return await this.roleService.update(id, dto);
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async delete(@Param('id') id: string) {
-    await this.roleService.delete(id);
-    return {
-      message: 'Role deleted successfully',
-    };
+    return await this.roleService.delete(id);
   }
 }

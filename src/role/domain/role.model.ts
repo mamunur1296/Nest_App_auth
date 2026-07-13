@@ -1,15 +1,21 @@
-/**
- * Domain Entity representing a Role.
- */
+import { ValidationException } from '../../common/exceptions/validation.exception';
+import { ForbiddenException } from '../../common/exceptions/forbidden.exception';
+import { ConflictException } from '../../common/exceptions/conflict.exception';
+
+// Domain Entity representing a Role.
 export class Role {
   private readonly id: string;
-  private readonly name: string;
+  private name: string;
   private readonly createdAt: Date;
 
   constructor(id: string, name: string, createdAt = new Date()) {
     this.id = id;
-    this.name = name;
+    this.name = Role.validateName(name);
     this.createdAt = createdAt;
+  }
+
+  public updateName(name: string): void {
+    this.name = Role.validateName(name);
   }
 
   public getId(): string {
@@ -24,13 +30,35 @@ export class Role {
     return this.createdAt;
   }
 
-  /**
-   * Domain validation: Ensure name is not empty and is uppercase.
-   */
+  public isSystemRole(): boolean {
+    const protectedRoles = ['SUPER_ADMIN', 'ADMIN', 'USER'];
+    return protectedRoles.includes(this.name);
+  }
+
+  public assertCanDelete(usersCount: number): void {
+    if (this.isSystemRole()) {
+      throw new ForbiddenException('Cannot delete critical system role.');
+    }
+    if (usersCount > 0) {
+      throw new ConflictException(
+        'Cannot delete role because it is currently assigned to users.',
+      );
+    }
+  }
+
+  // Domain validation: Ensure name is not empty and is uppercase.
   public static validateName(name: string): string {
     if (!name || name.trim().length === 0) {
-      throw new Error('Role name is required.');
+      throw new ValidationException('Role name is required.');
     }
     return name.trim().toUpperCase();
+  }
+
+  public toJSON(): Record<string, any> {
+    return {
+      id: this.id,
+      name: this.name,
+      createdAt: this.createdAt,
+    };
   }
 }

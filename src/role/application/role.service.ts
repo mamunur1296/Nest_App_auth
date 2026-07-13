@@ -1,18 +1,14 @@
-import {
-  Injectable,
-  BadRequestException,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { Role as DbRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { Role } from '../domain/role.model';
 import { RoleManager } from '../domain/role-manager';
 import { CreateRoleDto, UpdateRoleDto } from '../presentation/role.dtos';
+import { ConflictException } from '../../common/exceptions/conflict.exception';
+import { NotFoundException } from '../../common/exceptions/not-found.exception';
+import { RoleMapper } from './role.mapper';
 
-/**
- * Role Service coordinating CRUD operations.
- */
+//Role Service coordinating CRUD operations.
 @Injectable()
 export class RoleService {
   constructor(
@@ -20,16 +16,13 @@ export class RoleService {
     private readonly roleManager: RoleManager,
   ) {}
 
-  private mapToDomain(dbRole: DbRole): Role {
-    return new Role(dbRole.id, dbRole.name, dbRole.createdAt);
-  }
-
+  // Creates a new dynamic Role.
   public async create(dto: CreateRoleDto): Promise<Role> {
     const existing = await this.prisma.role.findUnique({
       where: { name: dto.name.toUpperCase() },
     });
     if (existing) {
-      throw new BadRequestException('Role name already exists.');
+      throw new ConflictException('Role name already exists.');
     }
 
     const uuid = randomUUID();
@@ -43,16 +36,18 @@ export class RoleService {
       },
     });
 
-    return this.mapToDomain(saved);
+    return RoleMapper.toDomain(saved);
   }
 
+  // Retrieves all dynamic Roles ordered by name ascending.
   public async findAll(): Promise<Role[]> {
     const dbRoles = await this.prisma.role.findMany({
       orderBy: { name: 'asc' },
     });
-    return dbRoles.map((role) => this.mapToDomain(role));
+    return dbRoles.map((role) => RoleMapper.toDomain(role));
   }
 
+  // Retrieves a single dynamic Role by ID.
   public async findOne(id: string): Promise<Role> {
     const dbRole = await this.prisma.role.findUnique({
       where: { id },
@@ -60,26 +55,27 @@ export class RoleService {
     if (!dbRole) {
       throw new NotFoundException('Role not found.');
     }
-    return this.mapToDomain(dbRole);
+    return RoleMapper.toDomain(dbRole);
   }
 
+  // Updates a dynamic Role's name.
   public async update(id: string, dto: UpdateRoleDto): Promise<Role> {
     const dbRole = await this.prisma.role.findUnique({ where: { id } });
     if (!dbRole) {
       throw new NotFoundException('Role not found.');
     }
 
-    const uppercaseName = dto.name.toUpperCase();
+    const domainRole = RoleMapper.toDomain(dbRole);
+    domainRole.updateName(dto.name);
+
     const existing = await this.prisma.role.findUnique({
-      where: { name: uppercaseName },
+      where: { name: domainRole.getName() },
     });
     if (existing && existing.id !== id) {
-      throw new BadRequestException(
+      throw new ConflictException(
         'Role name already in use by another role.',
       );
     }
-
-    const domainRole = this.roleManager.createRole(id, dto.name);
 
     const updated = await this.prisma.role.update({
       where: { id },
@@ -88,9 +84,10 @@ export class RoleService {
       },
     });
 
-    return this.mapToDomain(updated);
+    return RoleMapper.toDomain(updated);
   }
 
+  // Deletes a dynamic Role.
   public async delete(id: string): Promise<void> {
     const dbRole = await this.prisma.role.findUnique({
       where: { id },
@@ -100,16 +97,8 @@ export class RoleService {
       throw new NotFoundException('Role not found.');
     }
 
-    if (dbRole.users.length > 0) {
-      throw new BadRequestException(
-        'Cannot delete role because it is currently assigned to users.',
-      );
-    }
-
-    const protectedRoles = ['SUPER_ADMIN', 'ADMIN', 'USER'];
-    if (protectedRoles.includes(dbRole.name)) {
-      throw new BadRequestException('Cannot delete critical system role.');
-    }
+    const domainRole = RoleMapper.toDomain(dbRole);
+    domainRole.assertCanDelete(dbRole.users.length);
 
     await this.prisma.role.delete({
       where: { id },

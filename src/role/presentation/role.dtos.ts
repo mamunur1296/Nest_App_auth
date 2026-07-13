@@ -6,7 +6,7 @@ export class CreateRoleDto {
   @Matches(/^[A-Z_]+$/, {
     message: 'Role name must contain only uppercase letters and underscores',
   })
-  name!: string;
+  public readonly name!: string;
 }
 
 export class UpdateRoleDto {
@@ -15,5 +15,5 @@ export class UpdateRoleDto {
   @Matches(/^[A-Z_]+$/, {
     message: 'Role name must contain only uppercase letters and underscores',
   })
-  name!: string;
+  public readonly name!: string;
 }
