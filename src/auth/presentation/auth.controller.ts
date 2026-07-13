@@ -9,6 +9,7 @@ import {
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { AuthService } from '../application/auth.service';
 import {
   RegisterDto,
@@ -24,6 +25,7 @@ import { CurrentUser } from './decorators/current-user.decorator';
  * Kept extremely thin. It only maps incoming HTTP requests to DTOs,
  * invokes the Application Service, and handles domain/application errors by throwing appropriate HTTP exceptions.
  */
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
@@ -81,6 +83,7 @@ export class AuthController {
   }
 
   @Post('logout')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   public async logout(
@@ -99,6 +102,7 @@ export class AuthController {
   }
 
   @Post('change-password')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   public async changePassword(@Body() dto: ChangePasswordDto) {
@@ -118,6 +122,7 @@ export class AuthController {
   }
 
   @Get('me')
+  @ApiBearerAuth()
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   public async getMe(@CurrentUser('id') userId: string) {

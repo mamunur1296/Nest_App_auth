@@ -10,6 +10,7 @@ import {
   Put,
   UseGuards,
 } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RoleService } from '../application/role.service';
 import { CreateRoleDto, UpdateRoleDto } from './role.dtos';
 import { JwtAuthGuard } from '../../auth/presentation/guards/jwt-auth.guard';
@@ -19,6 +20,8 @@ import { Roles } from '../../auth/presentation/decorators/roles.decorator';
 /**
  * Controller exposing CRUD REST endpoints for dynamic Roles.
  */
+@ApiTags('roles')
+@ApiBearerAuth()
 @Controller('roles')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class RoleController {
