@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { randomUUID } from 'crypto';
-import { User as DbUser, UserRole } from '@prisma/client';
+import { User as DbUser } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -43,7 +43,7 @@ export class AuthService {
       dbUser.firstName,
       dbUser.lastName,
       dbUser.phoneNumber,
-      dbUser.role,
+      dbUser.roleId,
       dbUser.failedLoginAttempts,
       dbUser.lockUntil,
       dbUser.createdAt,
@@ -67,6 +67,27 @@ export class AuthService {
       throw new BadRequestException('Email is already registered.');
     }
 
+    // Determine dynamic role ID
+    let finalRoleId = dto.roleId;
+    if (!finalRoleId) {
+      const defaultRole = await this.prisma.role.findUnique({
+        where: { name: 'USER' },
+      });
+      if (!defaultRole) {
+        throw new BadRequestException(
+          'Default USER role not found. Run seed script.',
+        );
+      }
+      finalRoleId = defaultRole.id;
+    } else {
+      const roleExists = await this.prisma.role.findUnique({
+        where: { id: finalRoleId },
+      });
+      if (!roleExists) {
+        throw new BadRequestException('Specified role does not exist.');
+      }
+    }
+
     // 3. Call Domain Manager (Factory) to validate and instantiate the User model
     const uuid = randomUUID();
     const domainUser = await this.userManager.createUser(
@@ -76,7 +97,7 @@ export class AuthService {
       dto.firstName,
       dto.lastName,
       dto.phoneNumber,
-      dto.role || UserRole.USER,
+      finalRoleId,
     );
 
     // 4. Persist the Domain Model state to database
@@ -88,7 +109,7 @@ export class AuthService {
         firstName: domainUser.getFirstName(),
         lastName: domainUser.getLastName(),
         phoneNumber: domainUser.getPhoneNumber(),
-        role: domainUser.getRole(),
+        roleId: domainUser.getRoleId(),
         failedLoginAttempts: domainUser.getFailedLoginAttempts(),
         lockUntil: domainUser.getLockUntil(),
         createdAt: domainUser.getCreatedAt(),
@@ -105,6 +126,7 @@ export class AuthService {
     // 1. Retrieve the raw user data
     const dbUser = await this.prisma.user.findUnique({
       where: { email: dto.email },
+      include: { role: true },
     });
     if (!dbUser) {
       throw new BadRequestException('Invalid credentials.');
@@ -157,10 +179,11 @@ export class AuthService {
     });
 
     // Generate JWT tokens
+    const roleName = dbUser.role?.name || 'USER';
     const tokens = await this.generateTokens(
       domainUser.getId(),
       domainUser.getEmail(),
-      domainUser.getRole(),
+      roleName,
     );
 
     // Remove password hash from user response object
@@ -170,7 +193,8 @@ export class AuthService {
       firstName: domainUser.getFirstName(),
       lastName: domainUser.getLastName(),
       phoneNumber: domainUser.getPhoneNumber(),
-      role: domainUser.getRole(),
+      roleId: domainUser.getRoleId(),
+      roleName: roleName,
       createdAt: domainUser.getCreatedAt(),
     };
 
@@ -181,7 +205,7 @@ export class AuthService {
    * Use Case: Refresh Token Rotation
    */
   public async refreshTokens(refreshToken: string) {
-    let payload: { sub: string; email: string; role: UserRole };
+    let payload: { sub: string; email: string; role: string };
     try {
       payload = this.jwtService.verify(refreshToken, {
         secret: this.configService.get('JWT_REFRESH_SECRET'),
@@ -192,7 +216,7 @@ export class AuthService {
 
     const storedToken = await this.prisma.refreshToken.findUnique({
       where: { token: refreshToken },
-      include: { user: true },
+      include: { user: { include: { role: true } } },
     });
 
     if (!storedToken || storedToken.expiresAt < new Date()) {
@@ -202,10 +226,11 @@ export class AuthService {
     // Rotate refresh token (Delete current token, generate new pair)
     await this.prisma.refreshToken.delete({ where: { token: refreshToken } });
 
+    const roleName = storedToken.user.role?.name || 'USER';
     const tokens = await this.generateTokens(
       payload.sub,
       payload.email,
-      payload.role,
+      roleName,
     );
 
     return tokens;
@@ -278,6 +303,7 @@ export class AuthService {
   public async getMe(userId: string) {
     const dbUser = await this.prisma.user.findUnique({
       where: { id: userId },
+      include: { role: true },
     });
     if (!dbUser) {
       throw new NotFoundException('User not found');
@@ -289,7 +315,8 @@ export class AuthService {
       firstName: domainUser.getFirstName(),
       lastName: domainUser.getLastName(),
       phoneNumber: domainUser.getPhoneNumber(),
-      role: domainUser.getRole(),
+      roleId: domainUser.getRoleId(),
+      roleName: dbUser.role?.name || 'USER',
       createdAt: domainUser.getCreatedAt(),
     };
   }
@@ -297,8 +324,12 @@ export class AuthService {
   /**
    * Helper: Generates access and refresh tokens, stores refresh token in database
    */
-  private async generateTokens(userId: string, email: string, role: UserRole) {
-    const payload = { sub: userId, email, role };
+  private async generateTokens(
+    userId: string,
+    email: string,
+    roleName: string,
+  ) {
+    const payload = { sub: userId, email, role: roleName };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwtService.signAsync(payload, {

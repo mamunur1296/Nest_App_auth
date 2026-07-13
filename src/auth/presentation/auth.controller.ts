@@ -37,7 +37,7 @@ export class AuthController {
         message: 'User registered successfully',
         userId: user.getId(),
         email: user.getEmail(),
-        role: user.getRole(),
+        roleId: user.getRoleId(),
       };
     } catch (error: unknown) {
       const msg =

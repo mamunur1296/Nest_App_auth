@@ -1,6 +1,5 @@
 import * as bcrypt from 'bcryptjs';
 import { User } from './user.model';
-import { UserRole } from '@prisma/client';
 
 /**
  * Domain Service / Factory responsible for:
@@ -87,7 +86,7 @@ export class UserManager {
     firstName: string,
     lastName: string,
     phoneNumber: string,
-    role: UserRole = UserRole.USER,
+    roleId: string,
   ): Promise<User> {
     this.validateEmail(email);
     this.validateName(firstName, 'First name');
@@ -101,7 +100,7 @@ export class UserManager {
       firstName,
       lastName,
       phoneNumber,
-      role,
+      roleId,
     );
   }
 }

@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { PrismaClient, UserRole } from '@prisma/client';
+import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import pg from 'pg';
 import * as bcrypt from 'bcryptjs';
@@ -9,6 +9,21 @@ const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
+  const defaultRoles = ['SUPER_ADMIN', 'ADMIN', 'USER', 'STUDENT', 'TEACHER'];
+
+  console.log('🌱 Seeding roles...');
+  const roleMap: Record<string, string> = {};
+
+  for (const roleName of defaultRoles) {
+    const role = await prisma.role.upsert({
+      where: { name: roleName },
+      update: {},
+      create: { name: roleName },
+    });
+    roleMap[roleName] = role.id;
+    console.log(`- Role: ${roleName} (ID: ${role.id})`);
+  }
+
   const email = 'superadmin@system.com';
   const password = 'SuperAdminPassword123!';
   const phoneNumber = '01700000000';
@@ -28,7 +43,7 @@ async function main() {
       firstName: 'Super',
       lastName: 'Admin',
       phoneNumber,
-      role: UserRole.SUPER_ADMIN,
+      roleId: roleMap['SUPER_ADMIN'],
     },
   });
 

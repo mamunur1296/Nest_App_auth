@@ -3,10 +3,8 @@ import {
   IsNotEmpty,
   IsString,
   MinLength,
-  IsEnum,
   IsOptional,
 } from 'class-validator';
-import { UserRole } from '@prisma/client';
 
 /**
  * Data Transfer Object for Registration request.
@@ -37,9 +35,9 @@ export class RegisterDto {
   @IsNotEmpty({ message: 'Phone number is required' })
   phoneNumber!: string;
 
-  @IsEnum(UserRole, { message: 'Invalid user role' })
+  @IsString({ message: 'Role ID must be a string' })
   @IsOptional()
-  role?: UserRole;
+  roleId?: string;
 }
 
 /**

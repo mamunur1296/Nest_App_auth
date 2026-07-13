@@ -1,5 +1,4 @@
 import * as bcrypt from 'bcryptjs';
-import { UserRole } from '@prisma/client';
 
 /**
  * Domain Entity representing a User.
@@ -13,7 +12,7 @@ export class User {
   private readonly firstName: string;
   private readonly lastName: string;
   private readonly phoneNumber: string;
-  private readonly role: UserRole;
+  private readonly roleId: string;
   private failedLoginAttempts: number;
   private lockUntil: Date | null;
   private readonly createdAt: Date;
@@ -25,7 +24,7 @@ export class User {
     firstName: string,
     lastName: string,
     phoneNumber: string,
-    role: UserRole = UserRole.USER,
+    roleId: string,
     failedLoginAttempts = 0,
     lockUntil: Date | null = null,
     createdAt = new Date(),
@@ -36,7 +35,7 @@ export class User {
     this.firstName = firstName;
     this.lastName = lastName;
     this.phoneNumber = phoneNumber;
-    this.role = role;
+    this.roleId = roleId;
     this.failedLoginAttempts = failedLoginAttempts;
     this.lockUntil = lockUntil;
     this.createdAt = createdAt;
@@ -67,8 +66,8 @@ export class User {
     return this.phoneNumber;
   }
 
-  public getRole(): UserRole {
-    return this.role;
+  public getRoleId(): string {
+    return this.roleId;
   }
 
   public getFailedLoginAttempts(): number {
