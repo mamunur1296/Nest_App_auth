@@ -4,11 +4,20 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Get,
+  UseGuards,
   BadRequestException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { AuthService } from '../application/auth.service';
-import { RegisterDto, LoginDto, ChangePasswordDto } from './auth.dtos';
+import {
+  RegisterDto,
+  LoginDto,
+  ChangePasswordDto,
+  RefreshTokenDto,
+} from './auth.dtos';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 /**
  * Presentation Layer: NestJS Controller.
@@ -28,6 +37,7 @@ export class AuthController {
         message: 'User registered successfully',
         userId: user.getId(),
         email: user.getEmail(),
+        role: user.getRole(),
       };
     } catch (error: unknown) {
       const msg =
@@ -40,15 +50,13 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   public async login(@Body() dto: LoginDto) {
     try {
-      const user = await this.authService.login(dto);
+      const result = await this.authService.login(dto);
       return {
         message: 'Login successful',
-        userId: user.getId(),
-        email: user.getEmail(),
+        ...result,
       };
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : 'Login failed';
-      // Map domain locking/unauthorized errors to appropriate status codes
       if (msg.includes('locked') || msg.includes('invalid credentials')) {
         throw new UnauthorizedException(msg);
       }
@@ -56,13 +64,48 @@ export class AuthController {
     }
   }
 
+  @Post('refresh')
+  @HttpCode(HttpStatus.OK)
+  public async refresh(@Body() dto: RefreshTokenDto) {
+    try {
+      const tokens = await this.authService.refreshTokens(dto.refreshToken);
+      return {
+        message: 'Tokens refreshed successfully',
+        ...tokens,
+      };
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Token refresh failed';
+      throw new UnauthorizedException(msg);
+    }
+  }
+
+  @Post('logout')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  public async logout(
+    @CurrentUser('id') userId: string,
+    @Body() dto: RefreshTokenDto,
+  ) {
+    try {
+      await this.authService.logout(userId, dto.refreshToken);
+      return {
+        message: 'Logout successful',
+      };
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Logout failed';
+      throw new BadRequestException(msg);
+    }
+  }
+
   @Post('change-password')
+  @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.OK)
   public async changePassword(@Body() dto: ChangePasswordDto) {
     try {
       await this.authService.changePassword(dto);
       return {
-        message: 'Password changed successfully',
+        message: 'Password changed successfully. All sessions invalidated.',
       };
     } catch (error: unknown) {
       const msg =
@@ -70,6 +113,23 @@ export class AuthController {
       if (msg.includes('incorrect') || msg.includes('invalid credentials')) {
         throw new UnauthorizedException(msg);
       }
+      throw new BadRequestException(msg);
+    }
+  }
+
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  public async getMe(@CurrentUser('id') userId: string) {
+    try {
+      const user = await this.authService.getMe(userId);
+      return {
+        message: 'User profile retrieved successfully',
+        user,
+      };
+    } catch (error: unknown) {
+      const msg =
+        error instanceof Error ? error.message : 'Failed to retrieve profile';
       throw new BadRequestException(msg);
     }
   }

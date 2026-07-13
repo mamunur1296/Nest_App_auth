@@ -1,4 +1,12 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength } from 'class-validator';
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+  IsEnum,
+  IsOptional,
+} from 'class-validator';
+import { UserRole } from '@prisma/client';
 
 /**
  * Data Transfer Object for Registration request.
@@ -28,6 +36,10 @@ export class RegisterDto {
   @IsString({ message: 'Phone number must be a string' })
   @IsNotEmpty({ message: 'Phone number is required' })
   phoneNumber!: string;
+
+  @IsEnum(UserRole, { message: 'Invalid user role' })
+  @IsOptional()
+  role?: UserRole;
 }
 
 /**
@@ -59,4 +71,13 @@ export class ChangePasswordDto {
   @IsNotEmpty({ message: 'New password is required' })
   @MinLength(8, { message: 'New password must be at least 8 characters long' })
   newPassword!: string;
+}
+
+/**
+ * Data Transfer Object for Refresh Token request.
+ */
+export class RefreshTokenDto {
+  @IsString({ message: 'Refresh token must be a string' })
+  @IsNotEmpty({ message: 'Refresh token is required' })
+  refreshToken!: string;
 }

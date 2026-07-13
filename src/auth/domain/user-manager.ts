@@ -1,5 +1,6 @@
 import * as bcrypt from 'bcryptjs';
 import { User } from './user.model';
+import { UserRole } from '@prisma/client';
 
 /**
  * Domain Service / Factory responsible for:
@@ -86,12 +87,21 @@ export class UserManager {
     firstName: string,
     lastName: string,
     phoneNumber: string,
+    role: UserRole = UserRole.USER,
   ): Promise<User> {
     this.validateEmail(email);
     this.validateName(firstName, 'First name');
     this.validateName(lastName, 'Last name');
     this.validatePhoneNumber(phoneNumber);
     const passwordHash = await this.hashPassword(passwordPlain);
-    return new User(id, email, passwordHash, firstName, lastName, phoneNumber);
+    return new User(
+      id,
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      phoneNumber,
+      role,
+    );
   }
 }
