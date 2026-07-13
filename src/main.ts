@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
@@ -9,7 +9,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   app.useGlobalFilters(new HttpExceptionFilter());
-  app.useGlobalInterceptors(new TransformInterceptor());
+  
+  const reflector = app.get(Reflector);
+  app.useGlobalInterceptors(new TransformInterceptor(reflector));
   app.useGlobalPipes(new ValidationPipe({ transform: true, whitelist: true }));
 
   const config = new DocumentBuilder()

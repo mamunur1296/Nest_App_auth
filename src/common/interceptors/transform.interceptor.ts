@@ -4,27 +4,60 @@ import {
   ExecutionContext,
   CallHandler,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import { Observable } from 'rxjs';
 import { map } from 'rxjs/operators';
+import { SKIP_TRANSFORM_KEY } from '../decorators/skip-transform.decorator';
 
 export interface Response<T> {
   success: boolean;
+  message: string;
   data: T;
 }
 
 @Injectable()
 export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T>>
+  implements NestInterceptor<T, Response<T> | T>
 {
+  constructor(private readonly reflector: Reflector) {}
+
   public intercept(
     context: ExecutionContext,
     next: CallHandler,
-  ): Observable<Response<T>> {
+  ): Observable<Response<T> | T> {
+    const skipTransform = this.reflector.getAllAndOverride<boolean>(
+      SKIP_TRANSFORM_KEY,
+      [context.getHandler(), context.getClass()],
+    );
+
+    if (skipTransform) {
+      return next.handle();
+    }
+
     return next.handle().pipe(
-      map((data) => ({
-        success: true,
-        data: data === undefined ? null : data,
-      })),
+      map((data) => {
+        let message = 'Operation successful';
+        let payload = data;
+
+        if (data && typeof data === 'object') {
+          // If the return contains both a message and data payload
+          if ('message' in data && 'data' in data) {
+            message = (data as any).message;
+            payload = (data as any).data;
+          }
+          // If it contains only a message (e.g. for delete operations)
+          else if ('message' in data && Object.keys(data).length === 1) {
+            message = (data as any).message;
+            payload = null;
+          }
+        }
+
+        return {
+          success: true,
+          message,
+          data: payload === undefined ? null : payload,
+        };
+      }),
     );
   }
 }

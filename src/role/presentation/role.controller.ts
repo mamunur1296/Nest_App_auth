@@ -29,34 +29,53 @@ export class RoleController {
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.CREATED)
   public async create(@Body() dto: CreateRoleDto) {
-    return await this.roleService.create(dto);
+    const role = await this.roleService.create(dto);
+    return {
+      message: 'Role created successfully',
+      data: role,
+    };
   }
 
   @Get()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
   public async findAll() {
-    return await this.roleService.findAll();
+    const roles = await this.roleService.findAll();
+    return {
+      message: 'Roles retrieved successfully',
+      data: roles,
+    };
   }
 
   @Get(':id')
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
   public async findOne(@Param('id') id: string) {
-    return await this.roleService.findOne(id);
+    const role = await this.roleService.findOne(id);
+    return {
+      message: 'Role retrieved successfully',
+      data: role,
+    };
   }
 
   @Put(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    return await this.roleService.update(id, dto);
+    const role = await this.roleService.update(id, dto);
+    return {
+      message: 'Role updated successfully',
+      data: role,
+    };
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async delete(@Param('id') id: string) {
-    return await this.roleService.delete(id);
+    await this.roleService.delete(id);
+    return {
+      message: 'Role deleted successfully',
+    };
   }
 }
