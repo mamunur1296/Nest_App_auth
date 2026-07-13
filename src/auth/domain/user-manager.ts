@@ -46,6 +46,29 @@ export class UserManager {
   }
 
   /**
+   * Domain validation for Name.
+   */
+  public validateName(name: string, fieldName: string): void {
+    if (!name || name.trim().length === 0) {
+      throw new Error(`${fieldName} is required.`);
+    }
+  }
+
+  /**
+   * Domain validation for Phone Number.
+   */
+  public validatePhoneNumber(phoneNumber: string): void {
+    if (!phoneNumber || phoneNumber.trim().length === 0) {
+      throw new Error('Phone number is required.');
+    }
+    // Basic format check
+    const cleanPhone = phoneNumber.replace(/\D/g, '');
+    if (cleanPhone.length < 7) {
+      throw new Error('Phone number must have at least 7 digits.');
+    }
+  }
+
+  /**
    * Generates a password hash.
    */
   public async hashPassword(password: string): Promise<string> {
@@ -60,9 +83,15 @@ export class UserManager {
     id: string,
     email: string,
     passwordPlain: string,
+    firstName: string,
+    lastName: string,
+    phoneNumber: string,
   ): Promise<User> {
     this.validateEmail(email);
+    this.validateName(firstName, 'First name');
+    this.validateName(lastName, 'Last name');
+    this.validatePhoneNumber(phoneNumber);
     const passwordHash = await this.hashPassword(passwordPlain);
-    return new User(id, email, passwordHash);
+    return new User(id, email, passwordHash, firstName, lastName, phoneNumber);
   }
 }

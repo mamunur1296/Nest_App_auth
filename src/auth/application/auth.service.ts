@@ -31,6 +31,9 @@ export class AuthService {
       dbUser.id,
       dbUser.email,
       dbUser.password,
+      dbUser.firstName,
+      dbUser.lastName,
+      dbUser.phoneNumber,
       dbUser.failedLoginAttempts,
       dbUser.lockUntil,
       dbUser.createdAt,
@@ -41,7 +44,12 @@ export class AuthService {
    * Use Case: User Registration
    */
   public async register(dto: RegisterDto): Promise<User> {
-    // 1. Application-level validation/check (Check if user exists)
+    // 1. Password confirmation check
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match.');
+    }
+
+    // 2. Application-level validation/check (Check if user exists)
     const existing = await this.prisma.user.findUnique({
       where: { email: dto.email },
     });
@@ -49,20 +57,26 @@ export class AuthService {
       throw new BadRequestException('Email is already registered.');
     }
 
-    // 2. Call Domain Manager (Factory) to validate and instantiate the User model
+    // 3. Call Domain Manager (Factory) to validate and instantiate the User model
     const uuid = randomUUID();
     const domainUser = await this.userManager.createUser(
       uuid,
       dto.email,
       dto.password,
+      dto.firstName,
+      dto.lastName,
+      dto.phoneNumber,
     );
 
-    // 3. Persist the Domain Model state to database
+    // 4. Persist the Domain Model state to database
     const savedRecord = await this.prisma.user.create({
       data: {
         id: domainUser.getId(),
         email: domainUser.getEmail(),
         password: domainUser.getPasswordHash(),
+        firstName: domainUser.getFirstName(),
+        lastName: domainUser.getLastName(),
+        phoneNumber: domainUser.getPhoneNumber(),
         failedLoginAttempts: domainUser.getFailedLoginAttempts(),
         lockUntil: domainUser.getLockUntil(),
         createdAt: domainUser.getCreatedAt(),

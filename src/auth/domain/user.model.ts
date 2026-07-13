@@ -9,6 +9,9 @@ export class User {
   private readonly id: string;
   private readonly email: string;
   private passwordHash: string;
+  private readonly firstName: string;
+  private readonly lastName: string;
+  private readonly phoneNumber: string;
   private failedLoginAttempts: number;
   private lockUntil: Date | null;
   private readonly createdAt: Date;
@@ -17,6 +20,9 @@ export class User {
     id: string,
     email: string,
     passwordHash: string,
+    firstName: string,
+    lastName: string,
+    phoneNumber: string,
     failedLoginAttempts = 0,
     lockUntil: Date | null = null,
     createdAt = new Date(),
@@ -24,6 +30,9 @@ export class User {
     this.id = id;
     this.email = email;
     this.passwordHash = passwordHash;
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.phoneNumber = phoneNumber;
     this.failedLoginAttempts = failedLoginAttempts;
     this.lockUntil = lockUntil;
     this.createdAt = createdAt;
@@ -40,6 +49,18 @@ export class User {
 
   public getPasswordHash(): string {
     return this.passwordHash;
+  }
+
+  public getFirstName(): string {
+    return this.firstName;
+  }
+
+  public getLastName(): string {
+    return this.lastName;
+  }
+
+  public getPhoneNumber(): string {
+    return this.phoneNumber;
   }
 
   public getFailedLoginAttempts(): number {
