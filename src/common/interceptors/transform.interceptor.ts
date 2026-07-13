@@ -13,6 +13,7 @@ export interface Response<T> {
   success: boolean;
   message: string;
   data: T;
+  meta?: any;
 }
 
 @Injectable()
@@ -38,12 +39,16 @@ export class TransformInterceptor<T>
       map((data) => {
         let message = 'Operation successful';
         let payload = data;
+        let meta: any = undefined;
 
         if (data && typeof data === 'object') {
           // If the return contains both a message and data payload
           if ('message' in data && 'data' in data) {
             message = (data as any).message;
             payload = (data as any).data;
+            if ('meta' in data) {
+              meta = (data as any).meta;
+            }
           }
           // If it contains only a message (e.g. for delete operations)
           else if ('message' in data && Object.keys(data).length === 1) {
@@ -56,6 +61,7 @@ export class TransformInterceptor<T>
           success: true,
           message,
           data: payload === undefined ? null : payload,
+          ...(meta !== undefined ? { meta } : {}),
         };
       }),
     );

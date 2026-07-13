@@ -17,7 +17,7 @@ export class RoleService {
   ) {}
 
   // Creates a new dynamic Role.
-  public async create(dto: CreateRoleDto): Promise<Role> {
+  public async create(dto: CreateRoleDto): Promise<{ message: string; data: Role }> {
     const existing = await this.prisma.role.findUnique({
       where: { name: dto.name.toUpperCase() },
     });
@@ -36,30 +36,70 @@ export class RoleService {
       },
     });
 
-    return RoleMapper.toDomain(saved);
+    return {
+      message: 'Role created successfully',
+      data: RoleMapper.toDomain(saved),
+    };
   }
 
-  // Retrieves all dynamic Roles ordered by name ascending.
-  public async findAll(): Promise<Role[]> {
+  // Retrieves all dynamic Roles ordered by name ascending, with optional offset pagination.
+  public async findAll(
+    pageStr?: string,
+    limitStr?: string,
+  ): Promise<{
+    message: string;
+    data: Role[];
+    meta?: { total: number; page: number; limit: number };
+  }> {
+    const page = pageStr ? parseInt(pageStr, 10) : undefined;
+    const limit = limitStr ? parseInt(limitStr, 10) : undefined;
+
+    if (page !== undefined && limit !== undefined) {
+      const skip = (page - 1) * limit;
+      const [dbRoles, total] = await Promise.all([
+        this.prisma.role.findMany({
+          orderBy: { name: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.role.count(),
+      ]);
+      return {
+        message: 'Roles retrieved successfully',
+        data: dbRoles.map((role) => RoleMapper.toDomain(role)),
+        meta: {
+          total,
+          page,
+          limit,
+        },
+      };
+    }
+
     const dbRoles = await this.prisma.role.findMany({
       orderBy: { name: 'asc' },
     });
-    return dbRoles.map((role) => RoleMapper.toDomain(role));
+    return {
+      message: 'Roles retrieved successfully',
+      data: dbRoles.map((role) => RoleMapper.toDomain(role)),
+    };
   }
 
   // Retrieves a single dynamic Role by ID.
-  public async findOne(id: string): Promise<Role> {
+  public async findOne(id: string): Promise<{ message: string; data: Role }> {
     const dbRole = await this.prisma.role.findUnique({
       where: { id },
     });
     if (!dbRole) {
       throw new NotFoundException('Role not found.');
     }
-    return RoleMapper.toDomain(dbRole);
+    return {
+      message: 'Role retrieved successfully',
+      data: RoleMapper.toDomain(dbRole),
+    };
   }
 
   // Updates a dynamic Role's name.
-  public async update(id: string, dto: UpdateRoleDto): Promise<Role> {
+  public async update(id: string, dto: UpdateRoleDto): Promise<{ message: string; data: Role }> {
     const dbRole = await this.prisma.role.findUnique({ where: { id } });
     if (!dbRole) {
       throw new NotFoundException('Role not found.');
@@ -84,11 +124,14 @@ export class RoleService {
       },
     });
 
-    return RoleMapper.toDomain(updated);
+    return {
+      message: 'Role updated successfully',
+      data: RoleMapper.toDomain(updated),
+    };
   }
 
   // Deletes a dynamic Role.
-  public async delete(id: string): Promise<void> {
+  public async delete(id: string): Promise<{ message: string }> {
     const dbRole = await this.prisma.role.findUnique({
       where: { id },
       include: { users: true },
@@ -103,5 +146,9 @@ export class RoleService {
     await this.prisma.role.delete({
       where: { id },
     });
+
+    return {
+      message: 'Role deleted successfully',
+    };
   }
 }

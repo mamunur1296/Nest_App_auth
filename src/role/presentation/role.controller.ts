@@ -9,6 +9,7 @@ import {
   Post,
   Put,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RoleService } from '../application/role.service';
@@ -29,53 +30,34 @@ export class RoleController {
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.CREATED)
   public async create(@Body() dto: CreateRoleDto) {
-    const role = await this.roleService.create(dto);
-    return {
-      message: 'Role created successfully',
-      data: role,
-    };
+    return await this.roleService.create(dto);
   }
 
   @Get()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
-  public async findAll() {
-    const roles = await this.roleService.findAll();
-    return {
-      message: 'Roles retrieved successfully',
-      data: roles,
-    };
+  public async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+    return await this.roleService.findAll(page, limit);
   }
 
   @Get(':id')
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
   public async findOne(@Param('id') id: string) {
-    const role = await this.roleService.findOne(id);
-    return {
-      message: 'Role retrieved successfully',
-      data: role,
-    };
+    return await this.roleService.findOne(id);
   }
 
   @Put(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async update(@Param('id') id: string, @Body() dto: UpdateRoleDto) {
-    const role = await this.roleService.update(id, dto);
-    return {
-      message: 'Role updated successfully',
-      data: role,
-    };
+    return await this.roleService.update(id, dto);
   }
 
   @Delete(':id')
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async delete(@Param('id') id: string) {
-    await this.roleService.delete(id);
-    return {
-      message: 'Role deleted successfully',
-    };
+   return await this.roleService.delete(id);
   }
 }
