@@ -17,6 +17,12 @@ model User {
   failedLoginAttempts Int            @default(0)
   lockUntil           DateTime?
   createdAt           DateTime       @default(now())
+  createdBy           String?
+  updatedAt           DateTime?
+  updatedBy           String?
+  deletedAt           DateTime?
+  deletedBy           String?
+  isDeleted           Boolean        @default(false)
 
   role                Role           @relation(fields: [roleId], references: [id])
   refreshTokens       RefreshToken[]
@@ -26,6 +32,12 @@ model Role {
   id        String   @id @default(uuid())
   name      String   @unique
   createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime?
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+  isDeleted Boolean  @default(false)
   users     User[]
 }
 
@@ -35,6 +47,12 @@ model RefreshToken {
   token     String   @unique
   expiresAt DateTime
   createdAt DateTime @default(now())
+  createdBy String?
+  updatedAt DateTime?
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+  isDeleted Boolean  @default(false)
 
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 

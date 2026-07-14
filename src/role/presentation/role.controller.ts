@@ -36,7 +36,10 @@ export class RoleController {
   @Get()
   @Roles('SUPER_ADMIN', 'ADMIN')
   @HttpCode(HttpStatus.OK)
-  public async findAll(@Query('page') page?: string, @Query('limit') limit?: string) {
+  public async findAll(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
     return await this.roleService.findAll(page, limit);
   }
 
@@ -58,6 +61,6 @@ export class RoleController {
   @Roles('SUPER_ADMIN')
   @HttpCode(HttpStatus.OK)
   public async delete(@Param('id') id: string) {
-   return await this.roleService.delete(id);
+    return await this.roleService.delete(id);
   }
 }

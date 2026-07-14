@@ -1,12 +1,12 @@
 import * as bcrypt from 'bcryptjs';
+import { FullAuditAggregateRoot } from '../../common/domain/full-audit-aggregate-root';
 
 /**
  * Domain Entity representing a User.
  * This class is pure TypeScript, free of framework decorators, database schemas, or ORM annotations.
  * It encapsulates the core business invariants, rules, and behaviors of a User.
  */
-export class User {
-  private readonly id: string;
+export class User extends FullAuditAggregateRoot {
   private readonly email: string;
   private passwordHash: string;
   private readonly firstName: string;
@@ -15,7 +15,6 @@ export class User {
   private readonly roleId: string;
   private failedLoginAttempts: number;
   private lockUntil: Date | null;
-  private readonly createdAt: Date;
 
   constructor(
     id: string,
@@ -27,9 +26,9 @@ export class User {
     roleId: string,
     failedLoginAttempts = 0,
     lockUntil: Date | null = null,
-    createdAt = new Date(),
+    createdAt?: Date,
   ) {
-    this.id = id;
+    super(id, createdAt);
     this.email = email;
     this.passwordHash = passwordHash;
     this.firstName = firstName;
@@ -38,14 +37,9 @@ export class User {
     this.roleId = roleId;
     this.failedLoginAttempts = failedLoginAttempts;
     this.lockUntil = lockUntil;
-    this.createdAt = createdAt;
   }
 
   // Getters to expose state safely (read-only)
-  public getId(): string {
-    return this.id;
-  }
-
   public getEmail(): string {
     return this.email;
   }
@@ -76,10 +70,6 @@ export class User {
 
   public getLockUntil(): Date | null {
     return this.lockUntil;
-  }
-
-  public getCreatedAt(): Date {
-    return this.createdAt;
   }
 
   /**

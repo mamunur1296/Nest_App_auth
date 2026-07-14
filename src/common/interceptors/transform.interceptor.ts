@@ -17,9 +17,10 @@ export interface Response<T> {
 }
 
 @Injectable()
-export class TransformInterceptor<T>
-  implements NestInterceptor<T, Response<T> | T>
-{
+export class TransformInterceptor<T> implements NestInterceptor<
+  T,
+  Response<T> | T
+> {
   constructor(private readonly reflector: Reflector) {}
 
   public intercept(
@@ -44,15 +45,15 @@ export class TransformInterceptor<T>
         if (data && typeof data === 'object') {
           // If the return contains both a message and data payload
           if ('message' in data && 'data' in data) {
-            message = (data as any).message;
-            payload = (data as any).data;
+            message = data.message;
+            payload = data.data;
             if ('meta' in data) {
-              meta = (data as any).meta;
+              meta = data.meta;
             }
           }
           // If it contains only a message (e.g. for delete operations)
           else if ('message' in data && Object.keys(data).length === 1) {
-            message = (data as any).message;
+            message = data.message;
             payload = null;
           }
         }

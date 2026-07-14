@@ -1,33 +1,23 @@
+import { FullAuditAggregateRoot } from '../../common/domain/full-audit-aggregate-root';
 import { ValidationException } from '../../common/exceptions/validation.exception';
 import { ForbiddenException } from '../../common/exceptions/forbidden.exception';
 import { ConflictException } from '../../common/exceptions/conflict.exception';
 
 // Domain Entity representing a Role.
-export class Role {
-  private readonly id: string;
+export class Role extends FullAuditAggregateRoot {
   private name: string;
-  private readonly createdAt: Date;
 
-  constructor(id: string, name: string, createdAt = new Date()) {
-    this.id = id;
+  constructor(id: string, name: string, createdAt?: Date) {
+    super(id, createdAt);
     this.name = Role.validateName(name);
-    this.createdAt = createdAt;
   }
 
   public updateName(name: string): void {
     this.name = Role.validateName(name);
   }
 
-  public getId(): string {
-    return this.id;
-  }
-
   public getName(): string {
     return this.name;
-  }
-
-  public getCreatedAt(): Date {
-    return this.createdAt;
   }
 
   public isSystemRole(): boolean {
@@ -56,9 +46,9 @@ export class Role {
 
   public toJSON(): Record<string, any> {
     return {
-      id: this.id,
+      id: this.getId(),
       name: this.name,
-      createdAt: this.createdAt,
+      createdAt: this.getCreatedAt(),
     };
   }
 }

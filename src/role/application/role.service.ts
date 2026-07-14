@@ -17,7 +17,9 @@ export class RoleService {
   ) {}
 
   // Creates a new dynamic Role.
-  public async create(dto: CreateRoleDto): Promise<{ message: string; data: Role }> {
+  public async create(
+    dto: CreateRoleDto,
+  ): Promise<{ message: string; data: Role }> {
     const existing = await this.prisma.role.findUnique({
       where: { name: dto.name.toUpperCase() },
     });
@@ -99,7 +101,10 @@ export class RoleService {
   }
 
   // Updates a dynamic Role's name.
-  public async update(id: string, dto: UpdateRoleDto): Promise<{ message: string; data: Role }> {
+  public async update(
+    id: string,
+    dto: UpdateRoleDto,
+  ): Promise<{ message: string; data: Role }> {
     const dbRole = await this.prisma.role.findUnique({ where: { id } });
     if (!dbRole) {
       throw new NotFoundException('Role not found.');
@@ -112,9 +117,7 @@ export class RoleService {
       where: { name: domainRole.getName() },
     });
     if (existing && existing.id !== id) {
-      throw new ConflictException(
-        'Role name already in use by another role.',
-      );
+      throw new ConflictException('Role name already in use by another role.');
     }
 
     const updated = await this.prisma.role.update({

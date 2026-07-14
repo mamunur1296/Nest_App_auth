@@ -8,7 +8,9 @@ import pg from 'pg';
  * Manages database connection lifecycle.
  */
 @Injectable()
-export class PrismaService extends PrismaClient implements OnModuleInit, OnModuleDestroy
+export class PrismaService
+  extends PrismaClient
+  implements OnModuleInit, OnModuleDestroy
 {
   constructor() {
     const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
